@@ -97,17 +97,23 @@ class Action {
 
         console.log(`Package Name: ${this.packageName}`)
 
-        https.get(`${this.nugetSource}/v3-flatcontainer/${this.packageName}/index.json`, res => {
+        let url = `${this.nugetSource}/v3-flatcontainer/${this.packageName.toLowerCase()}/index.json`
+        console.log(`Getting versions from ${url}`)
+        https.get(url, res => {
             let body = ""
 
-            if (res.statusCode == 404)
+            if (res.statusCode == 404) {
+                console.log('404 response, assuming new package')
                 this._pushPackage(this.version, this.packageName)
+            }
+                
 
             if (res.statusCode == 200) {
                 res.setEncoding("utf8")
                 res.on("data", chunk => body += chunk)
                 res.on("end", () => {
                     const existingVersions = JSON.parse(body)
+                    console.log(`Versions retrieved: ${existingVersions.versions}`)
                     if (existingVersions.versions.indexOf(this.version) < 0)
                         this._pushPackage(this.version, this.packageName)
                 })
