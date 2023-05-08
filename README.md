@@ -25,7 +25,7 @@ jobs:
       # Publish
       - name: publish on version change
         id: publish_nuget
-        uses: alirezanet/publish-nuget@v3.0.0
+        uses: alirezanet/publish-nuget@v3.1.0
         with:
           # Filepath of the project to be packaged, relative to root of repository
           PROJECT_FILE_PATH: Core/Core.csproj
