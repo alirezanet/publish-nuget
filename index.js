@@ -1,6 +1,7 @@
 const os = require("os"),
     fs = require("fs"),
     path = require("path"),
+    core = require('@actions/core'),
     https = require("https"),
     spawnSync = require("child_process").spawnSync
 
@@ -43,7 +44,7 @@ class Action {
         this._executeInProcess(`git tag ${TAG}`)
         this._executeInProcess(`git push origin ${TAG}`)
 
-        process.stdout.write(`::set-output name=VERSION::${TAG}` + os.EOL)
+        core.setOutput('VERSION', TAG);
     }
 
     _pushPackage(version, name) {
@@ -78,12 +79,12 @@ class Action {
         const packageFilename = packages.filter(p => p.endsWith(".nupkg"))[0],
             symbolsFilename = packages.filter(p => p.endsWith(".snupkg"))[0]
 
-        process.stdout.write(`::set-output name=PACKAGE_NAME::${packageFilename}` + os.EOL)
-        process.stdout.write(`::set-output name=PACKAGE_PATH::${path.resolve(packageFilename)}` + os.EOL)
+        core.setOutput('PACKAGE_NAME', packageFilename);
+        core.setOutput('PACKAGE_PATH', path.resolve(packageFilename));
 
         if (symbolsFilename) {
-            process.stdout.write(`::set-output name=SYMBOLS_PACKAGE_NAME::${symbolsFilename}` + os.EOL)
-            process.stdout.write(`::set-output name=SYMBOLS_PACKAGE_PATH::${path.resolve(symbolsFilename)}` + os.EOL)
+            core.setOutput('SYMBOLS_PACKAGE_NAME', symbolsFilename);
+            core.setOutput('SYMBOLS_PACKAGE_PATH', path.resolve(symbolsFilename));
         }
 
         if (this.tagCommit)
@@ -106,7 +107,7 @@ class Action {
                 console.log('404 response, assuming new package')
                 this._pushPackage(this.version, this.packageName)
             }
-                
+
 
             if (res.statusCode == 200) {
                 res.setEncoding("utf8")
