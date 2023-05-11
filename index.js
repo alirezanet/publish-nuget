@@ -16,12 +16,25 @@ class Action {
         this.nugetKey = process.env.INPUT_NUGET_KEY || process.env.NUGET_KEY
         this.nugetSource = process.env.INPUT_NUGET_SOURCE || process.env.NUGET_SOURCE
         this.includeSymbols = JSON.parse(process.env.INPUT_INCLUDE_SYMBOLS || process.env.INCLUDE_SYMBOLS)
-        this.noBuild = JSON.parse(process.env.INPUT_NO_BUILD || process.env.NO_BUILD)
+        this.noBuild = JSON.parse(process.env.INPUT_NO_BUILD || process.env.NO_BUILD)         
+        this._output = []
     }
 
     _printErrorAndExit(msg) {
         console.log(`##[error]😭 ${msg}`)
         throw new Error(msg)
+    }
+
+    _setOutput(name, value) {
+        this._output.push(`${name}=${value}`)
+    }
+
+    _flushOutput() {
+        const filePath = process.env['GITHUB_OUTPUT']
+
+        if (filePath) {
+            fs.appendFileSync(filePath, this._output.join(os.EOL))
+        }
     }
 
     _executeCommand(cmd, options) {
@@ -42,8 +55,8 @@ class Action {
 
         this._executeInProcess(`git tag ${TAG}`)
         this._executeInProcess(`git push origin ${TAG}`)
-
-        process.stdout.write(`::set-output name=VERSION::${TAG}` + os.EOL)
+       
+        this._setOutput('VERSION', TAG)
     }
 
     _pushPackage(version, name) {
@@ -78,12 +91,12 @@ class Action {
         const packageFilename = packages.filter(p => p.endsWith(".nupkg"))[0],
             symbolsFilename = packages.filter(p => p.endsWith(".snupkg"))[0]
 
-        process.stdout.write(`::set-output name=PACKAGE_NAME::${packageFilename}` + os.EOL)
-        process.stdout.write(`::set-output name=PACKAGE_PATH::${path.resolve(packageFilename)}` + os.EOL)
+        this._setOutput('PACKAGE_NAME', packageFilename)
+        this._setOutput('PACKAGE_PATH', path.resolve(packageFilename))
 
         if (symbolsFilename) {
-            process.stdout.write(`::set-output name=SYMBOLS_PACKAGE_NAME::${symbolsFilename}` + os.EOL)
-            process.stdout.write(`::set-output name=SYMBOLS_PACKAGE_PATH::${path.resolve(symbolsFilename)}` + os.EOL)
+            this._setOutput('SYMBOLS_PACKAGE_NAME', symbolsFilename)
+            this._setOutput('SYMBOLS_PACKAGE_PATH', path.resolve(symbolsFilename))
         }
 
         if (this.tagCommit)
@@ -148,6 +161,7 @@ class Action {
         console.log(`Version: ${this.version}`)
 
         this._checkForUpdate()
+        this._flushOutput()
     }
 }
 
